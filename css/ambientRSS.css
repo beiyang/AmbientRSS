@@ -1,0 +1,53 @@
+body {
+    position: absolute;
+    top:0;
+    left:0;
+    bottom:0;
+    right:0;
+}
+
+.outer-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display:table;
+    height: 100%;
+}
+
+.inner-wrapper {
+    display:table-cell;
+    vertical-align: middle;
+}
+
+.ambient-content-block {
+    position: relative;
+    width: 80%;
+    margin: auto;
+}
+
+.ambient-content-block .item-title > h3 {
+    font-size: 32pt;
+}
+
+.ambient-content-block .item-thumb {
+    padding: 2%;
+    margin-top: 2%;
+    position: absolute;
+    left: 0%;
+    width: 35%;
+}
+
+.ambient-content-block .item-content {
+    padding: 2%;
+    margin-left: 35%;
+}
+
+.ambient-content-block .item-thumb > img {
+    width: 100%;
+    height: auto;
+}
+
+.ambient-content-block .item-description {
+    font-size: 16pt;
+    padding: 2%;
+}
