@@ -22,7 +22,14 @@
 
     var g_feed;
     $(document).ready(function(){
-        g_feed = new ambientRSS.ContentFeed({feed: "{% url 'proxy' 'http://www.engadget.com/rss.xml'%}"});
+        var abc = new ambientRSS.FeedCollection([],{url: "{% url 'proxy' 'http://feeds.abcnews.com/abcnews/topstories'%}"});
+        var engadget = new ambientRSS.FeedCollection([],{url: "{% url 'proxy' 'http://www.engadget.com/rss.xml'%}"});
+        abc.fetch();
+        engadget.fetch();
+        var feed = new ambientRSS.ContentFeed();
+        g_feed = feed;
+        feed.addFeed(abc);
+        feed.addFeed(engadget);
     });
 </script>
 <body>

@@ -3,6 +3,7 @@ var ambientRSS = {};
 ambientRSS.defaultTemplate = _.template('<div class="ambient-content-block"><div class="item-thumb"><%= image %></div>' +
     '<div class="item-content"><div class="item-title"><h3><%= title %></h3></div><div class="item-description"><%= description %></div></div></div>');
 
+/* A class that represents a specific content element.  Mostly this just renders using a predefined template */
 ambientRSS.ContentElement = Backbone.View.extend({
     template: ambientRSS.defaultTemplate,
     render: function(){
@@ -26,41 +27,111 @@ ambientRSS.ContentElement = Backbone.View.extend({
     }
 });
 
-ambientRSS.ContentFeed = Backbone.View.extend({
-    initialize: function(options){
-        var self = this;
-        this.collection = null;
-        this.views = [];
-        this.$front = $("#front .content-block");
-        this.$back = $("#back .content-block");
-        $.getFeed({
-            url: options.feed,
-            success: function(feed){
-                self.collection = new Backbone.Collection(feed.items);
-                self.render();
-            }
-        });
+
+ambientRSS.FeedItemModel = Backbone.Model.extend({
+    idAttribute: ""
+});
+
+
+/* A collection used for syncronizing with RSS XML */
+ambientRSS.FeedCollection = Backbone.Collection.extend({
+    initialize: function(models, options){
+        options = options || {};
+        this.url = options.url;
         return this;
     },
 
-    render: function(){
-        this.collection.each(function(m){
-            var test = $("<div>");
-            var view = new ambientRSS.ContentElement({model:m, el:test});
-            view.render();
-            this.views.push(view);
-        },this);
+    fetch: function(options){
+        options = options || {};
+        options.success = options.success || function(){};
+        var self = this;
+        $.getFeed({
+            url: options.url || this.url,
+            success: function(feed){
+                self.add(feed.items);
+                options.success.call(self);
+            }
+        });
+    }
+});
+
+
+/* A class that stores the overall view to call feeds and views within that feed */
+ambientRSS.ContentFeed = Backbone.View.extend({
+    initialize: function(options){
+        var self = this;
+        this.currentViewIdx = 0;
+        this.feeds = [];
+        this.viewQueue = [];
+        this.newViewQueue = [];
+        this.currentView = null;
+        this.$front = $("#front .content-block");
+        this.$back = $("#back .content-block");
+        return this;
     },
 
-    show: function(idx){
+    addFeed: function(feed){
+        this.feeds.push(feed);
+    },
+
+    flipViews: function(){
+        this.viewQueue = this.newViewQueue;
+        this.newViewQueue = [];
+    },
+
+    updateViews: function(view){
         var self = this;
-        var inObj = this.views[idx].$el;
+        _.each(this.feeds, function(feed){
+            feed.each(function(m){
+                var viewEl = $("<div>");
+                var view = new ambientRSS.ContentElement({model:m, el:viewEl});
+                view.render();
+                self.newViewQueue.push(view);
+            });
+        });
+    },
+
+    /* Controls the index and moves the feed along.  This manages updating views.  It is this function
+     * that gets attached to a interval driven timer
+     */
+    advance: function(){
+        this.show(this.currentViewIdx);
+        this.currentViewIdx++;
+
+        if(this.viewQueue.length <= this.currentViewIdx){
+            this.flipViews();
+            this.currentViewIdx = 0;
+            this.updateViews();
+        }
+    },
+
+
+    /* Shows a view in the current stack of available views */
+    show: function(idx){
+        if(this.viewQueue.length == 0) return;
+        idx = idx % this.viewQueue.length;
+        var self = this;
+        //do the transition in from the back plane
+        var inObj = this.viewQueue[idx].$el;
         inObj.appendTo(this.$back);
-        ambientRSS.transitions.rotateFadeUp(inObj, null, function(){
+
+        //do the transition out in the front plane... it should already be in the front plane
+        var outObj = null;
+        if(this.currentView){
+            outObj = this.currentView.$el;
+        }
+        ambientRSS.transitions.rotateFadeUp(inObj, outObj, function(){
+            if(outObj){
+                outObj.detach();
+            }
+            //empty the front store and pop it form the back
             self.$front.empty();
             inObj.appendTo(self.$front);
             self.$back.empty();
-        })
+
+            //store the current view and remove pop it from the stack
+            self.currentView = self.viewQueue[idx];
+        });
     }
 });
 
