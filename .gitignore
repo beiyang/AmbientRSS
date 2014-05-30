@@ -1,0 +1,11 @@
+venv
+dev-email
+*.pyc
+*.db
+staticfiles
+.settings
+/.DS_Store
+.DS_Store
+.idea
+local_settings.py
+node_modules

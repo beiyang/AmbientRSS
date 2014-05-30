@@ -34,7 +34,7 @@ ambientRSS.ContentFeed = Backbone.View.extend({
         this.$front = $("#front .content-block");
         this.$back = $("#back .content-block");
         $.getFeed({
-            url:'http://www.engadget.com/rss.xml',
+            url: options.feed,
             success: function(feed){
                 self.collection = new Backbone.Collection(feed.items);
                 self.render();
@@ -152,8 +152,3 @@ ambientRSS.transitions.rotateFadeUp = function(inObj, outObj, complete){
     ambientRSS.transitions.fadeUp(inObj, outObj, complete);
 }
 
-
-var g_feed;
-$(document).ready(function(){
-    g_feed = new ambientRSS.ContentFeed({feed: 'http://www.engadget.com/rss.xml'});
-});
