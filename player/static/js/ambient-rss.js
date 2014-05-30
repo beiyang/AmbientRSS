@@ -1,4 +1,6 @@
 var ambientRSS = {};
+ambientRSS.refreshContentTime = 100000; //seconds
+ambientRSS.contentOnTime = 7000;
 
 ambientRSS.defaultTemplate = _.template('<div class="ambient-content-block"><div class="item-thumb"><%= image %></div>' +
     '<div class="item-content"><div class="item-title"><h3><%= title %></h3></div><div class="item-description"><%= description %></div></div></div>');
@@ -36,8 +38,12 @@ ambientRSS.FeedItemModel = Backbone.Model.extend({
 /* A collection used for syncronizing with RSS XML */
 ambientRSS.FeedCollection = Backbone.Collection.extend({
     initialize: function(models, options){
+        _.bindAll(this, "fetch");
         options = options || {};
         this.url = options.url;
+
+        //automatically check for udpates
+        setInterval(this.fetch, ambientRSS.refreshContentTime);
         return this;
     },
 
@@ -59,6 +65,7 @@ ambientRSS.FeedCollection = Backbone.Collection.extend({
 /* A class that stores the overall view to call feeds and views within that feed */
 ambientRSS.ContentFeed = Backbone.View.extend({
     initialize: function(options){
+        _.bindAll(this, "advance", "start");
         var self = this;
         this.currentViewIdx = 0;
         this.feeds = [];
@@ -103,6 +110,23 @@ ambientRSS.ContentFeed = Backbone.View.extend({
             this.currentViewIdx = 0;
             this.updateViews();
         }
+    },
+
+    start: function(){
+        //starts the advancement
+        this.updateViews();
+        this.flipViews();
+        this.currentViewIdx = 0;
+        this.advance();
+        this.interval = setInterval(this.advance, ambientRSS.contentOnTime);
+        return this;
+    },
+
+    stop: function(){
+        if(this.interval){
+            clearInterval(this.interval);
+        }
+        return this;
     },
 
 
