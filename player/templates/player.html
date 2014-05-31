@@ -15,6 +15,10 @@
 
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.jfeed.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/ambient-rss.js"></script>
+
+
+<script type="text/javascript" src="//cdn.jsdelivr.net/jquery.waitforimages/1.5/jquery.waitforimages.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/ambient-flickr.js"></script>
 <script type="text/javascript">
     var urls = {};
     urls.proxy = "{% url 'proxy' '0'%}";
@@ -31,10 +35,16 @@
         engadget.fetch({success: function(){
             feed.start();
         }});
+        var flickrFeed = new ambientRSS.flickr.FlickrTagsBackground({tags:["beautiful","landscape","morning","-fantasy","-face","-eyes","-ufo"]});
+
     });
 </script>
 <body>
-
+<div id="ambient-flickr" class="background-layer">
+    <div class="flickr-front"></div>
+    <div class="flickr-back"></div>
+    <div class="flickr-tint-white"></div>
+</div>
 <div id="front" class="outer-wrapper">
     <div class="inner-wrapper">
         <div class="content-block">
