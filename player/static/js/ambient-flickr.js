@@ -10,9 +10,10 @@ ambientRSS.flickr.weatherAPI = 'http://api.openweathermap.org/data/2.5/weather?'
 
 ambientRSS.flickr.SearchImageCollection = Backbone.Collection.extend({
     parse: function(response){
+        console.log(response);
         this.pages = response.photos.pages;
         this.page = response.photos.page;
-        return response.photos.photo;
+        return _.filter(response.photos.photo, function(a){ return a.ispublic });
     }
 });
 
@@ -113,15 +114,17 @@ ambientRSS.flickr.FlickrTagsBackground = Backbone.View.extend({
 
     /* Sets internal free text search.  Expects a list of text strings. - for negation */
     setTexts: function(texts){
-        this.texts = texts.join();
+        this.texts = texts.join(" ");
     },
 
     /* Helper method that gets the search url for the collection */
     getSearchUrl: function(){
         //build an object to serialize
         var searchArgs = {
-            license: [4,5].join(), //the legally public ones
-            sort: "relevance"
+            //license: [4,5].join(), //the legally public ones
+            sort: "relevance",
+            //tag_mode: "any",
+            content_type: 1
         };
         if(this.tags != ''){
             searchArgs.tags = this.tags;
@@ -144,7 +147,7 @@ ambientRSS.flickr.FlickrWeatherBackground = ambientRSS.flickr.FlickrTagsBackgrou
         options = options || {};
         //the super classes constructor is called in refreshWeather
         //filter out some stupid stuff from flickr
-        this.setTags(["-fantasy", "-face", "-eyes", "-ufo"]);
+        //this.setTags(["-fantasy", "-face", "-eyes", "-ufo"]);
         this.setCity(options.city || 'San Jose, CA');
         //call super constructor
         ambientRSS.flickr.FlickrTagsBackground.prototype.initialize.apply(this);
@@ -168,6 +171,29 @@ ambientRSS.flickr.FlickrWeatherBackground = ambientRSS.flickr.FlickrTagsBackgrou
             success: function(model){
                 var data = model.toJSON();
                 var texts = data.weather[0].description.split(" ");
+
+                //calculate time of day
+                var sunrise = data.sys.sunrise;
+                var sunset = data.sys.sunset;
+                var now = new Date().getTime() * 0.001;
+                var tod = "";
+                if(now > sunset || now < sunrise){
+                    tod = "night";
+                }
+                //ok now there's some sun
+                if(now > sunrise && now < sunset){
+                    var totalSun = sunset - sunrise;
+                    var percentSun = (now-sunrise) / totalSun;
+                    console.log(now, totalSun, percentSun);
+                    if(percentSun < 0.85) tod = "dusk";
+                    if(percentSun < 0.7) tod = "day -night";
+                    if(percentSun < 0.55) tod = "noon";
+                    if(percentSun < 0.4) tod = "morning";
+                    if(percentSun < 0.15) tod = "dawn";
+                }
+                texts.push(tod);
+                console.log(texts);
+
                 self.setTexts(texts);
                 self.start();
             }
