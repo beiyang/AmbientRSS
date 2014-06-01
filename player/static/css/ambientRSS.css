@@ -34,6 +34,7 @@ div.background-layer {
     left:0;
     top:0;
     background-size: cover;
+    background-position: center center;
 }
 
 #ambient-flickr div.flickr-tint-black {

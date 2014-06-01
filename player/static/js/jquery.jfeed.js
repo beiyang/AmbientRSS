@@ -206,9 +206,7 @@ JRss.prototype  = {
 
             item.image = jQuery(item.content).find('img').eq(0).attr('src');
             var media = t.children('media\\:thumbnail').eq(0).attr('url');
-            if(t.find('media\\:thumbnail')){
-                console.log(t.children('media\\:thumbnail').eq(0));
-            }
+
             if(media){
                 item.image = '<img src="' + media + '">';
             }

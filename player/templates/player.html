@@ -35,7 +35,9 @@
         engadget.fetch({success: function(){
             feed.start();
         }});
-        var flickrFeed = new ambientRSS.flickr.FlickrTagsBackground({tags:["beautiful","landscape","morning","-fantasy","-face","-eyes","-ufo"]});
+
+        var flickrFeed = new ambientRSS.flickr.FlickrWeatherBackground();
+        g_feed = flickrFeed;
 
     });
 </script>
