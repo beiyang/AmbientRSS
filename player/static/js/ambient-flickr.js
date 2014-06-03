@@ -185,14 +185,13 @@ ambientRSS.flickr.FlickrWeatherBackground = ambientRSS.flickr.FlickrTagsBackgrou
                     var totalSun = sunset - sunrise;
                     var percentSun = (now-sunrise) / totalSun;
                     console.log(now, totalSun, percentSun);
-                    if(percentSun < 0.85) tod = "dusk";
+                    if(percentSun < 0.9) tod = "dusk";
                     if(percentSun < 0.7) tod = "day -night";
                     if(percentSun < 0.55) tod = "noon";
                     if(percentSun < 0.4) tod = "morning";
                     if(percentSun < 0.15) tod = "dawn";
                 }
                 texts.push(tod);
-                console.log(texts);
 
                 self.setTexts(texts);
                 self.start();
