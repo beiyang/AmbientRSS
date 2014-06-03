@@ -113,6 +113,7 @@ ambientRSS.ContentFeed = Backbone.View.extend({
     },
 
     start: function(){
+        this.stop();
         //starts the advancement
         this.updateViews();
         this.flipViews();
