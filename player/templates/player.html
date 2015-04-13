@@ -26,38 +26,49 @@
 
     var g_feed;
     $(document).ready(function(){
-        var abc = new ambientRSS.FeedCollection([],{url: "{% url 'proxy' 'http://feeds.abcnews.com/abcnews/topstories'%}"});
-        var engadget = new ambientRSS.FeedCollection([],{url: "{% url 'proxy' 'http://www.engadget.com/rss.xml'%}"});
-        var feed = new ambientRSS.ContentFeed();
-        feed.addFeed(abc);
-        feed.addFeed(engadget);
-        abc.fetch();
-        engadget.fetch({success: function(){
-            feed.start();
-        }});
+        //initialize the template
+        ambientRSS.templateContent = _.template($("#template-rss-content").html());
+
+        //create a feed
+        var feed = new ambientRSS.ContentFeed({el:"#feed-content"});
+        feed.addFeed("{% url 'proxy' 'http://feeds.abcnews.com/abcnews/topstories'%}");
+        feed.addFeed("{% url 'proxy' 'http://www.engadget.com/rss.xml'%}");
+
 
         var flickrFeed = new ambientRSS.flickr.FlickrWeatherBackground();
-        g_feed = flickrFeed;
+        g_feed = feed;
+        feed.feeds[0].fetch();
+        feed.feeds[1].fetch({success:function(){feed.updateViews()}});
+        feed.advance();
+        feed.start();
+
 
     });
 </script>
 <body>
+
 <div id="ambient-flickr" class="background-layer">
     <div class="flickr-front"></div>
     <div class="flickr-back"></div>
     <div class="flickr-tint-black"></div>
 </div>
-<div id="front" class="outer-wrapper">
-    <div class="inner-wrapper">
-        <div class="content-block">
+<div id="feed-content">
+</div>
+
+<script id="template-rss-content" type="text/template">
+    <div class="outer-wrapper">
+        <div class="inner-wrapper">
+            <div class="content-block">
+                <div class="ambient-content-block">
+                    <div class="item-thumb"><%= image %></div>
+                    <div class="item-content">
+                        <div class="item-title"><h3><%= title %></h3></div>
+                        <div class="item-description"><%= description %></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
-<div id="back" class="outer-wrapper">
-    <div class="inner-wrapper">
-        <div class="content-block">
-        </div>
-    </div>
-</div>
+</script>
 </body>
 </html>
