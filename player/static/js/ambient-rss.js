@@ -215,6 +215,26 @@ ambientRSS.transitions.transforms.move3d = function(el, options){
     return $el.transition(data);
 };
 
+
+ambientRSS.unwrapTransitions = function(obj){
+    while(obj.parent().hasClass('transition-wrapper')){
+        obj.unwrap();
+    }
+};
+
+ambientRSS.transitions.fade = function(inObj, outObj, complete){
+    if(inObj.length < 0 || outObj.length < 0 ){
+        console.error("Fade transition with no object");
+        return;
+    }
+    ambientRSS.transitions.transforms.fade(outObj);
+    ambientRSS.transitions.transforms.fade(inObj, {to:1.0, from:0.01, complete: function(){
+        ambientRSS.unwrapTransitions(inObj);
+        ambientRSS.unwrapTransitions(outObj);
+        complete.apply(this);
+    }});
+};
+
 ambientRSS.transitions.fadeUp = function(inObj, outObj, complete){
     ambientRSS.transitions.transforms.move3d(inObj, {to:[0,0], from:[0,-500]});
     ambientRSS.transitions.transforms.move3d(outObj,{to:[0,500], from:[0,0]});

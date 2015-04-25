@@ -20,6 +20,7 @@
 <script type="text/javascript" src="//cdn.jsdelivr.net/jquery.waitforimages/1.5/jquery.waitforimages.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/ambient-flickr.js"></script>
 <script type="text/javascript">
+    var g_500pxConsumerKey = "{{ FIVE_HUNDRED_PX_CONSUMER_KEY }}";
     var urls = {};
     urls.proxy = "{% url 'proxy' '0'%}";
 
@@ -34,23 +35,34 @@
         feed.addFeed("{% url 'proxy' 'http://feeds.abcnews.com/abcnews/topstories'%}");
         feed.addFeed("{% url 'proxy' 'http://www.engadget.com/rss.xml'%}");
 
-
+        var fiveHundredPx = new ambientRSS.BackgroundImageFader({el:"#ambient-500px-content"});
+        var contentCollection = new ambientRSS.FiveHundredPxPhotoCollection();
+        contentCollection.fetch({
+            url:"https://api.500px.com/v1/photos?feature=editors&page=1&image_size=2048&consumer_key=14JslGKbF2RRDoiSJgQz2Zmw1CIVkspPGtMVIFrH",
+            success:function(c) {
+                c.each(function (m,idx) {
+                    if(idx > 5) return;
+                    fiveHundredPx.addImage(m.get("image_url"));
+                });
+            }
+        });
+        /*
         var flickrFeed = new ambientRSS.flickr.FlickrWeatherBackground();
         g_feed = feed;
         feed.feeds[0].fetch();
         feed.feeds[1].fetch({success:function(){feed.updateViews()}});
         feed.advance();
         feed.start();
-
+        */
+        g_feed = fiveHundredPx;
 
     });
 </script>
 <body>
 
-<div id="ambient-flickr" class="background-layer">
-    <div class="flickr-front"></div>
-    <div class="flickr-back"></div>
-    <div class="flickr-tint-black"></div>
+<div id="ambient-500px" class="background-layer">
+    <div id="ambient-500px-content"></div>
+    <div class="tint-black"></div>
 </div>
 <div id="feed-content">
 </div>

@@ -17,6 +17,65 @@ ambientRSS.flickr.SearchImageCollection = Backbone.Collection.extend({
     }
 });
 
+
+ambientRSS.FiveHundredPxPhotoCollection = Backbone.Collection.extend({
+    parse: function(rsp){
+        return rsp.photos
+    }
+})
+
+ambientRSS.BackgroundImageFader = Backbone.View.extend({
+    initialize: function(options){
+        return this;
+    },
+
+    addImage: function(imageURL){
+        var self = this;
+        var img = new Image();
+        //error checking for image URL
+        img.onload = function(){
+            var div = $("<div>");
+            div.css("background-image",'url("' + imageURL + '")').hide();
+            self.$el.append(div);
+        };
+        //initialize the load
+        img.src = imageURL;
+        return this;
+    },
+
+
+    /* Controls the index and moves the feed along.  This manages updating views.  It is this function
+     * that gets attached to a interval driven timer
+     */
+    advance: function(){
+        var first = this.$el.children().first();
+        var next = first.next();
+        ambientRSS.transitions.fade(next, first, function(){
+            first.remove();
+        });
+        first.show();
+        next.show();
+    },
+
+    start: function(){
+        this.stop();
+        //starts the advancement
+        this.advance();
+        this.contentFlipInterval = setInterval(this.advance, ambientRSS.contentOnTime * 5);
+        return this;
+    },
+
+    stop: function(){
+        if(this.contentFlipInterval){
+            clearInterval(this.contentFlipInterval);
+        }
+        if(this.refreshContentInterval){
+            clearInterval(this.refreshContentInterval);
+        }
+        return this;
+    }
+});
+
 ambientRSS.flickr.FlickrTagsBackground = Backbone.View.extend({
     el: "#ambient-flickr",
 

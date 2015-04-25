@@ -29,7 +29,12 @@ div.background-layer {
     right: 0;
 }
 
-#ambient-flickr div {
+div#ambient-500px {
+    width: 100%;
+    height: 100%;
+}
+
+div#ambient-500px-content div {
     width: 100%;
     height: 100%;
     position: absolute;
@@ -39,11 +44,11 @@ div.background-layer {
     background-position: center center;
 }
 
-#ambient-flickr div.flickr-tint-black {
+div.tint-black {
     background-color: rgba(0,0,0,0.35);
 }
 
-#ambient-flickr div.flickr-tint-white {
+div.tint-white {
     background-color: rgba(255,255,255,0.7);
 }
 

@@ -4,10 +4,11 @@ from django.http import HttpResponse
 from django.http import QueryDict
 from django.template.context import RequestContext
 from django.shortcuts import render_to_response
+from django.conf import settings
 
 
 def player(request):
-    return render_to_response('player.html', {},
+    return render_to_response('player.html', {"FIVE_HUNDRED_PX_CONSUMER_KEY": settings.FIVE_HUNDRED_PX_CONSUMER_KEY},
                               context_instance=RequestContext(request))
 
 
