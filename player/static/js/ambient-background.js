@@ -1,4 +1,5 @@
 //create a new namespace
+/*
 ambientRSS.flickr = {};
 
 ambientRSS.flickr.contentOnTime = 10000; //ms
@@ -16,16 +17,18 @@ ambientRSS.flickr.SearchImageCollection = Backbone.Collection.extend({
         return _.filter(response.photos.photo, function(a){ return a.ispublic });
     }
 });
+*/
 
 
 ambientRSS.FiveHundredPxPhotoCollection = Backbone.Collection.extend({
     parse: function(rsp){
         return rsp.photos
     }
-})
+});
 
 ambientRSS.BackgroundImageFader = Backbone.View.extend({
     initialize: function(options){
+        _.bindAll(this, "advance", "start", "stop");
         return this;
     },
 
@@ -34,9 +37,17 @@ ambientRSS.BackgroundImageFader = Backbone.View.extend({
         var img = new Image();
         //error checking for image URL
         img.onload = function(){
+            //see if image already exists in queue already and don't add if it is
+            var backgroundCss = 'url("' + imageURL + '")';
+            if(self.$el.children().filter(function(){
+                    return $(this).css('background-image') == backgroundCss;
+                }).length > 0){
+                return;
+            }
             var div = $("<div>");
-            div.css("background-image",'url("' + imageURL + '")').hide();
+            div.css("background-image", backgroundCss).hide();
             self.$el.append(div);
+            self.trigger("image-loaded",imageURL);
         };
         //initialize the load
         img.src = imageURL;
@@ -50,9 +61,17 @@ ambientRSS.BackgroundImageFader = Backbone.View.extend({
     advance: function(){
         var first = this.$el.children().first();
         var next = first.next();
+        //notify others by throwing a signal
+        if(next.length <= 0){
+            this.trigger("empty-image-queue");
+        }
+
+        //start the removal process
         ambientRSS.transitions.fade(next, first, function(){
             first.remove();
         });
+
+        //show the things that are suppose to be shown. This assumes show() only affects display and not opacity
         first.show();
         next.show();
     },
@@ -69,137 +88,63 @@ ambientRSS.BackgroundImageFader = Backbone.View.extend({
         if(this.contentFlipInterval){
             clearInterval(this.contentFlipInterval);
         }
-        if(this.refreshContentInterval){
-            clearInterval(this.refreshContentInterval);
-        }
         return this;
     }
 });
 
-ambientRSS.flickr.FlickrTagsBackground = Backbone.View.extend({
-    el: "#ambient-flickr",
+/*
+A image fader background that uses five hunder pixel images. Pass query options to fetch. Defaults to
+editors choice images.
+ */
+ambientRSS.FiveHundredPxPhotoBackgroundSimple = ambientRSS.BackgroundImageFader.extend({
+    consumerKey: "14JslGKbF2RRDoiSJgQz2Zmw1CIVkspPGtMVIFrH",
+    photoApi: "https://api.500px.com/v1/photos?",
 
+    //constructor that just instantiates a background image fader and a collection
     initialize: function(options){
-        _.bindAll(this, "advance", "start", "stop", "startHelper");
-        //internal state
-        this.colIdx = 0;
-
-        //default tag
-        this.tags = '';
-        this.texts = '';
-
-        //create our front and back div
-        this.$back = this.$(".flickr-front");
-        this.$front = this.$(".flickr-back");
-
-        //predfined options and or tags
+        ambientRSS.BackgroundImageFader.prototype.initialize.apply(this, arguments);
+        _.bindAll(this, "fetch");
+        this.collection = new ambientRSS.FiveHundredPxPhotoCollection();
         options = options || {};
-        if(options.tags) this.setTags(options.tags);
-        if(options.texts) this.setTexts(options.texts);
+        this.fetchOptions = options.fetch || {};
 
-        //default values
-        this.backCollection = new ambientRSS.flickr.SearchImageCollection();
-        this.frontCollection = new ambientRSS.flickr.SearchImageCollection();
-        return this;
-    },
-
-    /* Swaps the collections and creates a new one to update photos */
-    swapCollection: function(){
-        this.frontCollection = this.backCollection;
-        this.backCollection = new ambientRSS.flickr.SearchImageCollection();
-        this.backCollection.url = this.getSearchUrl();
-        this.backCollection.fetch();
-        return this;
-    },
-
-    /* Advances one image in the current collection and does a fade transition */
-    advance: function(){
-        //sanity check
-        if(this.frontCollection.length==0 || this.colIdx >= this.frontCollection.length){
-            return this;
-        }
+        //sets a signal to the view so that when we run out of images we fetch more
         var self = this;
-        //create a new url
-        var url=ambientRSS.flickr.imageTemplate(this.frontCollection.at(this.colIdx).toJSON());
-        this.$front.css('background-image', this.$back.css('background-image')).css('opacity', 1);
-        this.$back.css('background-image', 'url("' + url + '")');
-        this.$el.waitForImages({
-            finished: function(){
-                self.$front.transition({opacity:0, duration:ambientRSS.flickr.transitionTime});
-            },
-            waitForAll: true
+        this.on("empty-image-queue", function(){
+            this.fetch(self.fetchOptions);
         });
-
-        //increment the index
-        this.colIdx++;
-        if(this.colIdx >= this.frontCollection.length){
-            this.swapCollection();
-            this.colIdx = 0;
-        }
+        this.on("finished-adding-images", function(){
+            this.start()
+        });
         return this;
     },
 
-    start: function(){
-        var self = this;
+    //uses the api to fetch the images
+    fetch: function(options){
+        //first assign the consumer key
+        options = options || this.fetchOptions;
+        options.consumer_key = this.consumerKey;
 
-        //create the collections
-        this.backCollection = new ambientRSS.flickr.SearchImageCollection();
-        this.backCollection.url = this.getSearchUrl();
-        this.backCollection.fetch({success:this.startHelper});
-        this.swapCollection();
-    },
+        //now set some defaults
+        options.feature = options.feature || "editors";
+        options.image_size = options.image_size || 2048;
+        options.sort= options.sort || "created_at";
+        options.rpp = options.rpp || 25;
 
-    startHelper: function(){
-        this.stop();
-        //starts the advancement
-        this.currentViewIdx = 0;
-        this.advance();
-        this.interval = setInterval(this.advance, ambientRSS.flickr.contentOnTime);
-        return this;
-    },
-
-    stop: function(){
-        if(this.interval){
-            clearInterval(this.interval);
-        }
-        return this;
-    },
-
-    /* Sets internal tags to search flickr for.  Expects a list of tags */
-    setTags: function(tags){
-        this.tags = tags.join();
-        return this;
-    },
-
-    /* Sets internal free text search.  Expects a list of text strings. - for negation */
-    setTexts: function(texts){
-        this.texts = texts.join(" ");
-    },
-
-    /* Helper method that gets the search url for the collection */
-    getSearchUrl: function(){
-        //build an object to serialize
-        var searchArgs = {
-            //license: [4,5].join(), //the legally public ones
-            sort: "relevance",
-            //tag_mode: "any",
-            content_type: 1
-        };
-        if(this.tags != ''){
-            searchArgs.tags = this.tags;
-        }
-        if(this.texts != ''){
-            searchArgs.text = this.texts;
-        }
-        //default catch all... at least show a pretty picture of skys
-        if(this.tags == '' && this.texts == ''){
-            searchArgs.texts = 'sky';
-        }
-        console.log(searchArgs);
-        return ambientRSS.flickr.searchUrl + "&" + $.param(searchArgs);
+        var self=this;
+        this.collection.fetch({
+            url: this.photoApi + $.param(options),
+            success:function(c) {
+                c.each(function (m,idx) {
+                    self.addImage(m.get("image_url"));
+                });
+                self.trigger("finished-adding-images");
+            }
+        });
     }
 });
 
+/*
 ambientRSS.flickr.FlickrWeatherBackground = ambientRSS.flickr.FlickrTagsBackground.extend({
 
     initialize: function(options){
@@ -213,7 +158,7 @@ ambientRSS.flickr.FlickrWeatherBackground = ambientRSS.flickr.FlickrTagsBackgrou
         return this;
     },
 
-    /* Sets the city for the current flickr weather background */
+    // Sets the city for the current flickr weather background
     setCity: function(city){
         this.city = city;
         this.url = ambientRSS.flickr.weatherAPI + $.param({q:this.city});
@@ -221,7 +166,7 @@ ambientRSS.flickr.FlickrWeatherBackground = ambientRSS.flickr.FlickrTagsBackgrou
         return this;
     },
 
-    /* Refreshes the weather and sets the internal tags to match the data */
+    // Refreshes the weather and sets the internal tags to match the data
     refreshWeather: function(){
         var self = this;
         var weather = new Backbone.Model();
@@ -258,4 +203,4 @@ ambientRSS.flickr.FlickrWeatherBackground = ambientRSS.flickr.FlickrTagsBackgrou
         })
     }
 });
-
+*/
